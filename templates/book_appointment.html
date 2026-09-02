@@ -7,6 +7,161 @@
     <title>Book Appointment — MediBook Clinic</title>
     <meta name="description" content="Select a date and time to book your appointment.">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* ── Custom Calendar ── */
+        .calendar-wrapper {
+            user-select: none;
+        }
+
+        .cal-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .cal-nav button {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .cal-nav button:hover {
+            background: var(--card);
+            border-color: var(--accent);
+        }
+
+        .cal-month-label {
+            font-weight: 700;
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 4px;
+        }
+
+        .cal-day-header {
+            text-align: center;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--muted);
+            padding: 4px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .cal-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.15s ease;
+            font-weight: 500;
+            position: relative;
+        }
+
+        /* empty cells */
+        .cal-day.empty {
+            cursor: default;
+        }
+
+        /* past or unavailable day */
+        .cal-day.disabled {
+            color: rgba(139, 148, 158, 0.35);
+            cursor: not-allowed;
+            background: transparent;
+        }
+
+        /* available day */
+        .cal-day.available {
+            color: var(--text);
+            background: rgba(88, 166, 255, 0.06);
+            border-color: rgba(88, 166, 255, 0.15);
+        }
+
+        .cal-day.available:hover {
+            background: rgba(88, 166, 255, 0.18);
+            border-color: var(--accent);
+            color: var(--accent);
+            transform: scale(1.08);
+        }
+
+        /* selected day */
+        .cal-day.selected {
+            background: linear-gradient(135deg, var(--accent), #3375d6) !important;
+            border-color: var(--accent) !important;
+            color: #fff !important;
+            font-weight: 700;
+            box-shadow: 0 4px 14px rgba(88, 166, 255, 0.4);
+            transform: scale(1.1);
+        }
+
+        /* today marker */
+        .cal-day.today::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: var(--accent2);
+        }
+
+        .cal-legend {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+        .legend-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
+        }
+
+        .selected-date-display {
+            margin-top: 0.75rem;
+            padding: 10px 14px;
+            background: rgba(88, 166, 255, 0.08);
+            border: 1px solid rgba(88, 166, 255, 0.2);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            color: var(--accent);
+            font-weight: 600;
+            display: none;
+        }
+
+        .selected-date-display.visible {
+            display: block;
+        }
+    </style>
 </head>
 
 <body>
@@ -42,7 +197,7 @@
 
         <div class="page-header">
             <h1>Book Appointment</h1>
-            <p>Select your preferred date and time slot below.</p>
+            <p>Pick an available date on the calendar, then choose your time slot.</p>
         </div>
 
         <div class="booking-wrapper">
@@ -93,25 +248,67 @@
 
                 <form method="POST" action="{{ url_for('book_appointment', doctor_id=doctor.id) }}" id="booking-form">
 
+                    <!-- Hidden inputs submitted with the form -->
+                    <input type="hidden" id="appointment_date_input" name="appointment_date">
+                    <input type="hidden" id="appointment_time" name="appointment_time">
+
+                    <!-- ── Custom Calendar ── -->
                     <div class="form-group">
-                        <label class="form-label" for="appointment_date_input">Appointment Date</label>
-                        <input id="appointment_date_input" name="appointment_date" type="date"
-                            class="form-control future-only" required>
+                        <label class="form-label">Appointment Date</label>
+                        <div class="calendar-wrapper">
+
+                            <!-- Month navigation -->
+                            <div class="cal-nav">
+                                <button type="button" id="cal-prev" title="Previous month">&#8592;</button>
+                                <span class="cal-month-label" id="cal-month-label"></span>
+                                <button type="button" id="cal-next" title="Next month">&#8594;</button>
+                            </div>
+
+                            <!-- Day headers -->
+                            <div class="cal-grid" id="cal-grid">
+                                <div class="cal-day-header">Sun</div>
+                                <div class="cal-day-header">Mon</div>
+                                <div class="cal-day-header">Tue</div>
+                                <div class="cal-day-header">Wed</div>
+                                <div class="cal-day-header">Thu</div>
+                                <div class="cal-day-header">Fri</div>
+                                <div class="cal-day-header">Sat</div>
+                            </div>
+
+                            <!-- Legend -->
+                            <div class="cal-legend">
+                                <div class="legend-item">
+                                    <div class="legend-dot"
+                                        style="background:rgba(88,166,255,0.3);border:1px solid rgba(88,166,255,0.5);">
+                                    </div>
+                                    Available
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-dot" style="background:rgba(139,148,158,0.15);"></div>
+                                    Unavailable
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-dot" style="background:linear-gradient(135deg,#58a6ff,#3375d6);">
+                                    </div>
+                                    Selected
+                                </div>
+                            </div>
+
+                            <!-- Selected date display -->
+                            <div class="selected-date-display" id="selected-date-display">
+                                📅 Selected: <span id="selected-date-text"></span>
+                            </div>
+
+                        </div>
                     </div>
 
-                    <div class="form-group">
+                    <!-- Time slots (shown after date selected) -->
+                    <div class="form-group" id="time-slot-section" style="display:none;">
                         <label class="form-label">Available Time Slots</label>
-                        <p class="text-muted small mb-1">Select a date first, then click a time slot below.</p>
-
-                        <!-- Visual slot picker -->
+                        <p class="text-muted small mb-1">Click a slot to select your appointment time.</p>
                         <div class="time-slots" id="time-slots-container" data-doctor-id="{{ doctor.id }}"
                             data-days="{{ doctor.available_days }}" data-times="{{ doctor.available_time }}">
-                            <p class="text-muted small" style="grid-column:1/-1;">← Select a date to see available
-                                slots.</p>
                         </div>
-
-                        <!-- Hidden input submitted with the form -->
-                        <input type="hidden" id="appointment_time" name="appointment_time">
                     </div>
 
                     <div class="mt-2 d-flex gap-1" style="flex-wrap:wrap;">
@@ -122,12 +319,151 @@
                     </div>
 
                 </form>
-
             </div><!-- .card -->
         </div><!-- .booking-wrapper -->
     </div>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+    <script>
+        (function () {
+            /* ── Config from Jinja ── */
+            const AVAILABLE_DAYS = "{{ doctor.available_days }}".split(',').map(d => d.trim());
+            const DOCTOR_ID = "{{ doctor.id }}";
+
+            /* day-name index (0=Sun…6=Sat) */
+            const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+                'July', 'August', 'September', 'October', 'November', 'December'];
+
+            const todayObj = new Date();
+            todayObj.setHours(0, 0, 0, 0);
+
+            let currentYear = todayObj.getFullYear();
+            let currentMonth = todayObj.getMonth(); // 0-based
+            let selectedDateStr = '';   // YYYY-MM-DD
+
+            const grid = document.getElementById('cal-grid');
+            const monthLabel = document.getElementById('cal-month-label');
+            const dateInput = document.getElementById('appointment_date_input');
+            const timeInput = document.getElementById('appointment_time');
+            const displayBox = document.getElementById('selected-date-display');
+            const displayText = document.getElementById('selected-date-text');
+            const timeSection = document.getElementById('time-slot-section');
+            const slotCont = document.getElementById('time-slots-container');
+
+            /* ── Render calendar ── */
+            function renderCalendar(year, month) {
+                monthLabel.textContent = `${MONTH_NAMES[month]} ${year}`;
+
+                // Remove old day cells (keep 7 headers)
+                const cells = grid.querySelectorAll('.cal-day');
+                cells.forEach(c => c.remove());
+
+                const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+                // blank leading cells
+                for (let i = 0; i < firstDay; i++) {
+                    const blank = document.createElement('div');
+                    blank.className = 'cal-day empty';
+                    grid.appendChild(blank);
+                }
+
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const cellDate = new Date(year, month, d);
+                    cellDate.setHours(0, 0, 0, 0);
+
+                    const dayName = DAY_NAMES[cellDate.getDay()];
+                    const isPast = cellDate < todayObj;
+                    const isAvail = AVAILABLE_DAYS.includes(dayName) && !isPast;
+                    const isToday = cellDate.getTime() === todayObj.getTime();
+                    const dateStr = toDateStr(year, month, d);
+                    const isSel = dateStr === selectedDateStr;
+
+                    const cell = document.createElement('div');
+                    cell.className = 'cal-day';
+                    cell.textContent = d;
+
+                    if (isSel) cell.classList.add('selected');
+                    else if (isAvail) cell.classList.add('available');
+                    else cell.classList.add('disabled');
+
+                    if (isToday) cell.classList.add('today');
+
+                    if (isAvail) {
+                        cell.addEventListener('click', () => selectDate(dateStr, cellDate));
+                    }
+
+                    grid.appendChild(cell);
+                }
+            }
+
+            function toDateStr(y, m, d) {
+                return `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            }
+
+            async function selectDate(dateStr, dateObj) {
+                selectedDateStr = dateStr;
+                dateInput.value = dateStr;
+                timeInput.value = '';
+
+                /* update display */
+                const formatted = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                displayText.textContent = formatted;
+                displayBox.classList.add('visible');
+
+                /* re-render to show highlight */
+                renderCalendar(currentYear, currentMonth);
+
+                /* load time slots */
+                timeSection.style.display = 'block';
+                slotCont.innerHTML = '<p class="text-muted small" style="grid-column:1/-1;">Loading slots…</p>';
+
+                let booked = [];
+                try {
+                    const res = await fetch(`/api/booked_slots/${DOCTOR_ID}/${dateStr}`);
+                    booked = await res.json();
+                } catch (_) { }
+
+                const allTimes = (slotCont.dataset.times || '').split(',').map(t => t.trim()).filter(Boolean);
+                slotCont.innerHTML = '';
+
+                allTimes.forEach(time => {
+                    const isBooked = booked.includes(time);
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'time-slot' + (isBooked ? ' booked' : '');
+                    btn.textContent = time;
+                    btn.title = isBooked ? 'Already booked' : time;
+                    btn.disabled = isBooked;
+
+                    btn.addEventListener('click', () => {
+                        if (isBooked) return;
+                        slotCont.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+                        btn.classList.add('selected');
+                        timeInput.value = time;
+                    });
+                    slotCont.appendChild(btn);
+                });
+            }
+
+            /* ── Navigation ── */
+            document.getElementById('cal-prev').addEventListener('click', () => {
+                currentMonth--;
+                if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+                renderCalendar(currentYear, currentMonth);
+            });
+
+            document.getElementById('cal-next').addEventListener('click', () => {
+                currentMonth++;
+                if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+                renderCalendar(currentYear, currentMonth);
+            });
+
+            /* Initial render */
+            renderCalendar(currentYear, currentMonth);
+        })();
+    </script>
 </body>
 
 </html>
