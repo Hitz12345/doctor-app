@@ -1,115 +1,133 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Appointments — MediBook Clinic</title>
-    <meta name="description" content="View and manage all your appointments at MediBook Clinic.">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Appointments — MediBook</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-
 <body>
 
-    <!-- Navbar -->
-    <nav class="navbar">
-        <a href="{{ url_for('dashboard') }}" class="navbar-brand">
-            <div class="logo-icon">🏥</div>
-            <span>MediBook</span>
-        </a>
-        <ul class="navbar-nav">
-            <li><a href="{{ url_for('dashboard') }}" class="nav-link" id="nav-dashboard">🏠 <span>Dashboard</span></a>
-            </li>
-            <li><a href="{{ url_for('doctors') }}" class="nav-link" id="nav-doctors">👨‍⚕️ <span>Doctors</span></a></li>
-            <li><a href="{{ url_for('my_appointments') }}" class="nav-link active" id="nav-appts">📅 <span>My
-                        Appointments</span></a></li>
-            <li><span class="nav-badge">{{ session.name }}</span></li>
-            <li><a href="{{ url_for('logout') }}" class="nav-link" id="nav-logout">🚪 <span>Logout</span></a></li>
-        </ul>
-    </nav>
+<nav class="navbar">
+  <a href="{{ url_for('dashboard') }}" class="navbar-brand">
+    <div class="logo-icon">MB</div>
+    <span>MediBook</span>
+  </a>
+  <ul class="navbar-nav">
+    <li><a href="{{ url_for('dashboard') }}" class="nav-link" id="nav-dashboard">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>
+      <span>Dashboard</span></a></li>
+    <li><a href="{{ url_for('doctors') }}" class="nav-link" id="nav-doctors">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+      <span>Doctors</span></a></li>
+    <li><a href="{{ url_for('my_appointments') }}" class="nav-link active" id="nav-appts">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+      <span>My Appointments</span></a></li>
+    <li><span class="nav-badge">{{ session.name }}</span></li>
+    <li><a href="{{ url_for('logout') }}" class="nav-link" id="nav-logout">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"/></svg>
+      <span>Logout</span></a></li>
+  </ul>
+</nav>
 
-    <div class="container page-wrapper">
+<div class="container page-wrapper">
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }}">
-            {% if category == 'success' %}✅{% elif category == 'danger' %}❌{% elif category == 'warning' %}⚠️{% else
-            %}ℹ️{% endif %}
-            {{ message }}
-        </div>
-        {% endfor %}
-        {% endwith %}
-
-        <div class="page-header d-flex justify-between align-center">
-            <div>
-                <h1>My Appointments</h1>
-                <p>All your upcoming and past appointments in one place.</p>
-            </div>
-            <a href="{{ url_for('doctors') }}" class="btn btn-primary" id="btn-new-appt">📅 Book New</a>
-        </div>
-
-        {% if appointments %}
-        <div class="card">
-            <div class="table-wrapper">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Doctor</th>
-                            <th>Specialization</th>
-                            <th>Date</th>
-                            <th>Time</th>
-                            <th>Status</th>
-                            <th>Booked On</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for appt in appointments %}
-                        <tr id="appt-row-{{ appt.id }}">
-                            <td class="text-muted">{{ loop.index }}</td>
-                            <td class="fw-600">{{ appt.doctor_name }}</td>
-                            <td class="text-muted">{{ appt.specialization }}</td>
-                            <td>{{ appt.appointment_date }}</td>
-                            <td>{{ appt.appointment_time }}</td>
-                            <td>
-                                <span class="badge badge-{{ appt.status }}">
-                                    {% if appt.status == 'pending' %}⏳{% elif appt.status == 'approved' %}✅{% else %}❌{%
-                                    endif %}
-                                    {{ appt.status | capitalize }}
-                                </span>
-                            </td>
-                            <td class="text-muted small">{{ appt.created_at[:10] }}</td>
-                            <td>
-                                {% if appt.status != 'cancelled' %}
-                                <form method="POST" action="{{ url_for('cancel_appointment', appt_id=appt.id) }}"
-                                    style="display:inline;">
-                                    <button type="submit" class="btn btn-danger btn-sm"
-                                        data-confirm="Cancel this appointment with {{ appt.doctor_name }}?"
-                                        id="cancel-btn-{{ appt.id }}">❌ Cancel</button>
-                                </form>
-                                {% else %}
-                                <span class="text-muted small">—</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">
+        {% if category == 'success' %}
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+        {% elif category == 'danger' %}
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+        {% elif category == 'warning' %}
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
         {% else %}
-        <div class="empty-state">
-            <div class="empty-icon">📭</div>
-            <h3>No appointments found</h3>
-            <p>You haven't booked any appointments yet. Browse our doctors to get started.</p>
-            <a href="{{ url_for('doctors') }}" class="btn btn-primary mt-2" id="btn-empty-book">🩺 Browse Doctors</a>
-        </div>
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
         {% endif %}
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endwith %}
 
+  <div class="page-header d-flex justify-between align-center">
+    <div>
+      <h1>My Appointments</h1>
+      <p>All your upcoming and past appointments in one place.</p>
     </div>
-    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
-</body>
+    <a href="{{ url_for('doctors') }}" class="btn btn-primary" id="btn-new-appt">
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"/></svg>
+      Book New
+    </a>
+  </div>
 
+  {% if appointments %}
+  <div class="card">
+    <div class="table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Doctor</th>
+            <th>Specialization</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Status</th>
+            <th>Booked On</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for appt in appointments %}
+          <tr id="appt-row-{{ appt.id }}">
+            <td class="text-muted">{{ loop.index }}</td>
+            <td class="fw-600">{{ appt.doctor_name }}</td>
+            <td class="text-muted">{{ appt.specialization }}</td>
+            <td>{{ appt.appointment_date }}</td>
+            <td>{{ appt.appointment_time }}</td>
+            <td>
+              <span class="badge badge-{{ appt.status }}">
+                {% if appt.status == 'pending' %}
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+                {% elif appt.status == 'approved' %}
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                {% else %}
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+                {% endif %}
+                {{ appt.status | capitalize }}
+              </span>
+            </td>
+            <td class="text-muted small">{{ appt.created_at[:10] }}</td>
+            <td>
+              {% if appt.status != 'cancelled' %}
+              <form method="POST" action="{{ url_for('cancel_appointment', appt_id=appt.id) }}" style="display:inline;">
+                <button type="submit" class="btn btn-danger btn-sm" data-confirm="Cancel this appointment with {{ appt.doctor_name }}?" id="cancel-btn-{{ appt.id }}">Cancel</button>
+              </form>
+              {% else %}
+              <span class="text-muted small">—</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="empty-state">
+    <div class="empty-icon">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 3a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2H5zm0 2h10v7h-2l-1 2H8l-1-2H5V5z" clip-rule="evenodd"/></svg>
+    </div>
+    <h3>No appointments found</h3>
+    <p>You haven't booked any appointments yet. Browse our doctors to get started.</p>
+    <a href="{{ url_for('doctors') }}" class="btn btn-primary mt-2" id="btn-empty-book">
+      <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+      Browse Doctors
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
 </html>

@@ -3,8 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login — MediBook Clinic</title>
-  <meta name="description" content="Sign in to book your doctor appointment online.">
+  <title>Sign In — MediBook</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
@@ -12,15 +11,23 @@
   <div class="auth-card">
 
     <div class="auth-logo">
-      <div class="logo-circle">🏥</div>
-      <h2>MediBook Clinic</h2>
+      <div class="logo-circle">MB</div>
+      <h2>MediBook</h2>
       <p>Sign in to manage your appointments</p>
     </div>
 
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% for category, message in messages %}
         <div class="alert alert-{{ category }}">
-          {% if category == 'success' %}✅{% elif category == 'danger' %}❌{% elif category == 'warning' %}⚠️{% else %}ℹ️{% endif %}
+          {% if category == 'success' %}
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          {% elif category == 'danger' %}
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+          {% elif category == 'warning' %}
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+          {% else %}
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+          {% endif %}
           {{ message }}
         </div>
       {% endfor %}
@@ -35,11 +42,12 @@
       <div class="form-group">
         <label class="form-label" for="password">Password</label>
         <input id="password" name="password" type="password" class="form-control"
-               placeholder="••••••••" required autocomplete="current-password">
+               placeholder="Enter your password" required autocomplete="current-password">
       </div>
       <div class="mt-2">
         <button type="submit" class="btn btn-primary btn-full" id="login-btn">
-          🔐 Sign in
+          <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+          Sign In
         </button>
       </div>
     </form>
@@ -51,8 +59,8 @@
       </a>
     </p>
 
-    <div style="margin-top:1.5rem; padding:1rem; background:rgba(88,166,255,0.05);
-                border:1px solid rgba(88,166,255,0.15); border-radius:8px; font-size:0.8rem; color:var(--muted);">
+    <div style="margin-top:1.5rem; padding:1rem; background:var(--accent-glow-2);
+                border:1px solid rgba(74,158,255,0.12); border-radius:var(--radius-sm); font-size:0.8rem; color:var(--muted);">
       <strong style="color:var(--accent);">Demo credentials</strong><br>
       Admin — <code>admin@clinic.com</code> / <code>admin123</code>
     </div>

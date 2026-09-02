@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (!availableDays.includes(dayName)) {
                 slotContainer.innerHTML = `<p class="text-muted small" style="grid-column:1/-1">
-          ⚠️ Doctor not available on <strong>${dayName}</strong>. Please choose another date.</p>`;
+          Doctor not available on <strong>${dayName}</strong>. Please choose another date.</p>`;
                 return;
             }
 
