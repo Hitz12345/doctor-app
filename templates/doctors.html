@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doctors — MediBook Clinic</title>
+    <meta name="description" content="Browse available specialist doctors and book your appointment.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard') }}" class="navbar-brand">
+            <div class="logo-icon">🏥</div>
+            <span>MediBook</span>
+        </a>
+        <ul class="navbar-nav">
+            <li><a href="{{ url_for('dashboard') }}" class="nav-link" id="nav-dashboard">🏠 <span>Dashboard</span></a>
+            </li>
+            <li><a href="{{ url_for('doctors') }}" class="nav-link active" id="nav-doctors">👨‍⚕️
+                    <span>Doctors</span></a></li>
+            <li><a href="{{ url_for('my_appointments') }}" class="nav-link" id="nav-appts">📅 <span>My
+                        Appointments</span></a></li>
+            <li><span class="nav-badge">{{ session.name }}</span></li>
+            <li><a href="{{ url_for('logout') }}" class="nav-link" id="nav-logout">🚪 <span>Logout</span></a></li>
+        </ul>
+    </nav>
+
+    <div class="container page-wrapper">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+            {% if category == 'success' %}✅{% elif category == 'danger' %}❌{% elif category == 'warning' %}⚠️{% else
+            %}ℹ️{% endif %}
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endwith %}
+
+        <div class="page-header">
+            <h1>Our Specialist Doctors</h1>
+            <p>Choose a doctor and book your appointment at a convenient date and time.</p>
+        </div>
+
+        {% if doctors %}
+        <div class="doctors-grid">
+            {% for doctor in doctors %}
+            <div class="doctor-card" id="doctor-card-{{ doctor.id }}">
+                <div class="d-flex align-center gap-2">
+                    <div class="doctor-avatar">{{ doctor.name[3] | upper }}</div>
+                    <div class="doctor-info">
+                        <div class="doctor-name">{{ doctor.name }}</div>
+                        <div class="doctor-spec">{{ doctor.specialization }}</div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+
+                <div class="doctor-meta">
+                    <div class="meta-item">
+                        <span class="icon">📅</span>
+                        <div>
+                            <div class="text-muted small" style="margin-bottom:4px;">Available Days</div>
+                            <div class="tags">
+                                {% for day in doctor.available_days.split(',') %}
+                                <span class="tag">{{ day.strip() }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <span class="icon">⏰</span>
+                        <div>
+                            <div class="text-muted small" style="margin-bottom:4px;">Available Times</div>
+                            <div class="tags">
+                                {% for time in doctor.available_time.split(',') %}
+                                <span class="tag time">{{ time.strip() }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="{{ url_for('book_appointment', doctor_id=doctor.id) }}" class="btn btn-primary btn-full"
+                    id="book-btn-{{ doctor.id }}">
+                    📅 Book Appointment
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">👨‍⚕️</div>
+            <h3>No doctors available</h3>
+            <p>Check back later — doctors are being added by our admin team.</p>
+        </div>
+        {% endif %}
+
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+
+</html>

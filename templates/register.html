@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register — MediBook Clinic</title>
+    <meta name="description" content="Create a free patient account to book your doctor appointment.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+    <div class="auth-wrapper">
+        <div class="auth-card">
+
+            <div class="auth-logo">
+                <div class="logo-circle">🏥</div>
+                <h2>Create Account</h2>
+                <p>Register as a patient to book appointments</p>
+            </div>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                {% if category == 'success' %}✅{% elif category == 'danger' %}❌{% elif category == 'warning' %}⚠️{% else
+                %}ℹ️{% endif %}
+                {{ message }}
+            </div>
+            {% endfor %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('register') }}" novalidate>
+                <div class="form-group">
+                    <label class="form-label" for="name">Full Name</label>
+                    <input id="name" name="name" type="text" class="form-control" placeholder="John Doe" required
+                        autocomplete="name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="email">Email Address</label>
+                    <input id="email" name="email" type="email" class="form-control" placeholder="you@example.com"
+                        required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="password">Password</label>
+                    <input id="password" name="password" type="password" class="form-control"
+                        placeholder="Min. 6 characters" required autocomplete="new-password">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="confirm_password">Confirm Password</label>
+                    <input id="confirm_password" name="confirm_password" type="password" class="form-control"
+                        placeholder="Repeat password" required autocomplete="new-password">
+                </div>
+                <div class="mt-2">
+                    <button type="submit" class="btn btn-primary btn-full" id="register-btn">
+                        🚀 Create Account
+                    </button>
+                </div>
+            </form>
+
+            <p class="text-muted small" style="text-align:center; margin-top:1.25rem;">
+                Already have an account?
+                <a href="{{ url_for('login') }}" class="text-accent" style="text-decoration:none; font-weight:600;">
+                    Sign in here
+                </a>
+            </p>
+
+        </div>
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+
+</html>

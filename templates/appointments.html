@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Appointments — MediBook Clinic</title>
+    <meta name="description" content="View and manage all your appointments at MediBook Clinic.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard') }}" class="navbar-brand">
+            <div class="logo-icon">🏥</div>
+            <span>MediBook</span>
+        </a>
+        <ul class="navbar-nav">
+            <li><a href="{{ url_for('dashboard') }}" class="nav-link" id="nav-dashboard">🏠 <span>Dashboard</span></a>
+            </li>
+            <li><a href="{{ url_for('doctors') }}" class="nav-link" id="nav-doctors">👨‍⚕️ <span>Doctors</span></a></li>
+            <li><a href="{{ url_for('my_appointments') }}" class="nav-link active" id="nav-appts">📅 <span>My
+                        Appointments</span></a></li>
+            <li><span class="nav-badge">{{ session.name }}</span></li>
+            <li><a href="{{ url_for('logout') }}" class="nav-link" id="nav-logout">🚪 <span>Logout</span></a></li>
+        </ul>
+    </nav>
+
+    <div class="container page-wrapper">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+            {% if category == 'success' %}✅{% elif category == 'danger' %}❌{% elif category == 'warning' %}⚠️{% else
+            %}ℹ️{% endif %}
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endwith %}
+
+        <div class="page-header d-flex justify-between align-center">
+            <div>
+                <h1>My Appointments</h1>
+                <p>All your upcoming and past appointments in one place.</p>
+            </div>
+            <a href="{{ url_for('doctors') }}" class="btn btn-primary" id="btn-new-appt">📅 Book New</a>
+        </div>
+
+        {% if appointments %}
+        <div class="card">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Doctor</th>
+                            <th>Specialization</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Booked On</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appt in appointments %}
+                        <tr id="appt-row-{{ appt.id }}">
+                            <td class="text-muted">{{ loop.index }}</td>
+                            <td class="fw-600">{{ appt.doctor_name }}</td>
+                            <td class="text-muted">{{ appt.specialization }}</td>
+                            <td>{{ appt.appointment_date }}</td>
+                            <td>{{ appt.appointment_time }}</td>
+                            <td>
+                                <span class="badge badge-{{ appt.status }}">
+                                    {% if appt.status == 'pending' %}⏳{% elif appt.status == 'approved' %}✅{% else %}❌{%
+                                    endif %}
+                                    {{ appt.status | capitalize }}
+                                </span>
+                            </td>
+                            <td class="text-muted small">{{ appt.created_at[:10] }}</td>
+                            <td>
+                                {% if appt.status != 'cancelled' %}
+                                <form method="POST" action="{{ url_for('cancel_appointment', appt_id=appt.id) }}"
+                                    style="display:inline;">
+                                    <button type="submit" class="btn btn-danger btn-sm"
+                                        data-confirm="Cancel this appointment with {{ appt.doctor_name }}?"
+                                        id="cancel-btn-{{ appt.id }}">❌ Cancel</button>
+                                </form>
+                                {% else %}
+                                <span class="text-muted small">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📭</div>
+            <h3>No appointments found</h3>
+            <p>You haven't booked any appointments yet. Browse our doctors to get started.</p>
+            <a href="{{ url_for('doctors') }}" class="btn btn-primary mt-2" id="btn-empty-book">🩺 Browse Doctors</a>
+        </div>
+        {% endif %}
+
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+
+</html>

@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Appointment — MediBook Clinic</title>
+    <meta name="description" content="Select a date and time to book your appointment.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard') }}" class="navbar-brand">
+            <div class="logo-icon">🏥</div>
+            <span>MediBook</span>
+        </a>
+        <ul class="navbar-nav">
+            <li><a href="{{ url_for('dashboard') }}" class="nav-link" id="nav-dashboard">🏠 <span>Dashboard</span></a>
+            </li>
+            <li><a href="{{ url_for('doctors') }}" class="nav-link" id="nav-doctors">👨‍⚕️ <span>Doctors</span></a></li>
+            <li><a href="{{ url_for('my_appointments') }}" class="nav-link" id="nav-appts">📅 <span>My
+                        Appointments</span></a></li>
+            <li><span class="nav-badge">{{ session.name }}</span></li>
+            <li><a href="{{ url_for('logout') }}" class="nav-link" id="nav-logout">🚪 <span>Logout</span></a></li>
+        </ul>
+    </nav>
+
+    <div class="container page-wrapper">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+            {% if category == 'success' %}✅{% elif category == 'danger' %}❌{% elif category == 'warning' %}⚠️{% else
+            %}ℹ️{% endif %}
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endwith %}
+
+        <div class="page-header">
+            <h1>Book Appointment</h1>
+            <p>Select your preferred date and time slot below.</p>
+        </div>
+
+        <div class="booking-wrapper">
+
+            <!-- Doctor profile -->
+            <div class="doctor-profile-card">
+                <div class="profile-avatar">{{ doctor.name[3] | upper }}</div>
+                <div class="profile-name">{{ doctor.name }}</div>
+                <div class="profile-spec">{{ doctor.specialization }}</div>
+
+                <div class="divider"></div>
+
+                <div class="doctor-meta" style="text-align:left;">
+                    <div class="meta-item">
+                        <span class="icon">📅</span>
+                        <div>
+                            <div class="text-muted small" style="margin-bottom:4px;">Available Days</div>
+                            <div class="tags">
+                                {% for day in doctor.available_days.split(',') %}
+                                <span class="tag">{{ day.strip() }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="meta-item" style="margin-top:0.5rem;">
+                        <span class="icon">⏰</span>
+                        <div>
+                            <div class="text-muted small" style="margin-bottom:4px;">Available Times</div>
+                            <div class="tags">
+                                {% for time in doctor.available_time.split(',') %}
+                                <span class="tag time">{{ time.strip() }}</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="divider"></div>
+                <a href="{{ url_for('doctors') }}" class="btn btn-ghost btn-full" id="btn-back-doctors">← Back to
+                    Doctors</a>
+            </div>
+
+            <!-- Booking form -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">📅 Select Date &amp; Time</span>
+                </div>
+
+                <form method="POST" action="{{ url_for('book_appointment', doctor_id=doctor.id) }}" id="booking-form">
+
+                    <div class="form-group">
+                        <label class="form-label" for="appointment_date_input">Appointment Date</label>
+                        <input id="appointment_date_input" name="appointment_date" type="date"
+                            class="form-control future-only" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Available Time Slots</label>
+                        <p class="text-muted small mb-1">Select a date first, then click a time slot below.</p>
+
+                        <!-- Visual slot picker -->
+                        <div class="time-slots" id="time-slots-container" data-doctor-id="{{ doctor.id }}"
+                            data-days="{{ doctor.available_days }}" data-times="{{ doctor.available_time }}">
+                            <p class="text-muted small" style="grid-column:1/-1;">← Select a date to see available
+                                slots.</p>
+                        </div>
+
+                        <!-- Hidden input submitted with the form -->
+                        <input type="hidden" id="appointment_time" name="appointment_time">
+                    </div>
+
+                    <div class="mt-2 d-flex gap-1" style="flex-wrap:wrap;">
+                        <button type="submit" class="btn btn-primary" id="confirm-booking-btn">
+                            ✅ Confirm Booking
+                        </button>
+                        <a href="{{ url_for('doctors') }}" class="btn btn-ghost" id="cancel-booking-btn">Cancel</a>
+                    </div>
+
+                </form>
+
+            </div><!-- .card -->
+        </div><!-- .booking-wrapper -->
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+
+</html>

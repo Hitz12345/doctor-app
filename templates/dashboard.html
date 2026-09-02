@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — MediBook Clinic</title>
+    <meta name="description" content="Your patient dashboard — view and manage your appointments.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar">
+        <a href="{{ url_for('dashboard') }}" class="navbar-brand">
+            <div class="logo-icon">🏥</div>
+            <span>MediBook</span>
+        </a>
+        <ul class="navbar-nav">
+            <li><a href="{{ url_for('dashboard') }}" class="nav-link active" id="nav-dashboard">🏠
+                    <span>Dashboard</span></a></li>
+            <li><a href="{{ url_for('doctors') }}" class="nav-link" id="nav-doctors">👨‍⚕️ <span>Doctors</span></a></li>
+            <li><a href="{{ url_for('my_appointments') }}" class="nav-link" id="nav-appts">📅 <span>My
+                        Appointments</span></a></li>
+            <li>
+                <span class="nav-badge">{{ session.name }}</span>
+            </li>
+            <li><a href="{{ url_for('logout') }}" class="nav-link" id="nav-logout">🚪 <span>Logout</span></a></li>
+        </ul>
+    </nav>
+
+    <div class="container page-wrapper">
+
+        <!-- Flash messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">
+            {% if category == 'success' %}✅{% elif category == 'danger' %}❌{% elif category == 'warning' %}⚠️{% else
+            %}ℹ️{% endif %}
+            {{ message }}
+        </div>
+        {% endfor %}
+        {% endwith %}
+
+        <!-- Header -->
+        <div class="page-header">
+            <h1>Welcome back, {{ session.name }}! 👋</h1>
+            <p>Here's an overview of your appointments at MediBook Clinic.</p>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue">📅</div>
+                <div class="stat-info">
+                    <div class="value">{{ appointments | length }}</div>
+                    <div class="label">Total Appointments</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange">⏳</div>
+                <div class="stat-info">
+                    <div class="value">{{ appointments | selectattr('status','equalto','pending') | list | length }}
+                    </div>
+                    <div class="label">Pending</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green">✅</div>
+                <div class="stat-info">
+                    <div class="value">{{ appointments | selectattr('status','equalto','approved') | list | length }}
+                    </div>
+                    <div class="label">Approved</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple">❌</div>
+                <div class="stat-info">
+                    <div class="value">{{ appointments | selectattr('status','equalto','cancelled') | list | length }}
+                    </div>
+                    <div class="label">Cancelled</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="d-flex gap-2 mb-2">
+            <a href="{{ url_for('doctors') }}" class="btn btn-primary" id="btn-book-now">🩺 Book an Appointment</a>
+            <a href="{{ url_for('my_appointments') }}" class="btn btn-ghost" id="btn-view-appts">📋 View All
+                Appointments</a>
+        </div>
+
+        <!-- Recent appointments -->
+        <div class="card">
+            <div class="card-header">
+                <span class="card-title">📋 Recent Appointments</span>
+            </div>
+
+            {% if appointments %}
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Doctor</th>
+                            <th>Specialization</th>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appt in appointments[:5] %}
+                        <tr>
+                            <td class="fw-600">{{ appt.doctor_name }}</td>
+                            <td class="text-muted">{{ appt.specialization }}</td>
+                            <td>{{ appt.appointment_date }}</td>
+                            <td>{{ appt.appointment_time }}</td>
+                            <td>
+                                <span class="badge badge-{{ appt.status }}">
+                                    {% if appt.status == 'pending' %}⏳{% elif appt.status == 'approved' %}✅{% else %}❌{%
+                                    endif %}
+                                    {{ appt.status | capitalize }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if appt.status != 'cancelled' %}
+                                <form method="POST" action="{{ url_for('cancel_appointment', appt_id=appt.id) }}"
+                                    style="display:inline;">
+                                    <button type="submit" class="btn btn-danger btn-sm"
+                                        data-confirm="Cancel this appointment?"
+                                        id="cancel-appt-{{ appt.id }}">Cancel</button>
+                                </form>
+                                {% else %}
+                                <span class="text-muted small">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% if appointments | length > 5 %}
+            <div class="mt-2">
+                <a href="{{ url_for('my_appointments') }}" class="btn btn-outline btn-sm">View all {{ appointments |
+                    length }} appointments →</a>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">📭</div>
+                <h3>No appointments yet</h3>
+                <p>Book your first appointment with one of our specialist doctors.</p>
+                <a href="{{ url_for('doctors') }}" class="btn btn-primary mt-2" id="btn-empty-book">🩺 Browse
+                    Doctors</a>
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+
+</html>
