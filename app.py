@@ -59,19 +59,13 @@ def init_db():
             conn.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
                 ('Admin', 'admin@clinic.com', generate_password_hash('admin123'), 'admin')
-            )
+            ) 
 
         # seed sample doctors if none exist
         count = conn.execute("SELECT COUNT(*) FROM doctors").fetchone()[0]
         if count == 0:
             sample_doctors = [
-                ('Dr. Mya Mya',      'General Physician',  'Monday,Wednesday,Friday',    '09:00,10:00,11:00,14:00,15:00'),
-                ('Dr. Aung Kyaw',    'Dentist',            'Tuesday,Thursday,Saturday',  '09:00,10:00,11:00,14:00,15:00'),
-                ('Dr. Khin Khin',    'Pediatrician',       'Monday,Tuesday,Wednesday',   '10:00,11:00,14:00,15:00,16:00'),
-                ('Dr. Zaw Lin',      'Orthopedist',        'Wednesday,Thursday,Friday',  '09:00,10:00,14:00,15:00,16:00'),
-                ('Dr. Su Su',        'Dermatologist',      'Monday,Thursday,Friday',     '09:00,10:00,11:00,14:00,15:00'),
-                ('Dr. Htet Htet',    'Eye Specialist',     'Tuesday,Wednesday,Saturday', '09:00,10:00,14:00,15:00,16:00'),
-                ('Dr. Nay Lin',      'ENT Specialist',     'Monday,Friday,Saturday',     '10:00,11:00,14:00,15:00,16:00'),
+          
             ]
             conn.executemany(
                 "INSERT INTO doctors (name, specialization, available_days, available_time) VALUES (?, ?, ?, ?)",
