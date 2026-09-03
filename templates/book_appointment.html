@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Appointment — MediBook</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <style>
+    .calendar-wrapper { user-select: none; }
+    .cal-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+    }
+    .cal-nav button {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text-2);
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-xs);
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s var(--ease);
+    }
+    .cal-nav button:hover { background: var(--surface-3); border-color: var(--accent); color: var(--accent); }
+    .cal-month-label { font-weight: 700; font-size: 0.95rem; color: var(--text); letter-spacing: -0.02em; }
+    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+    .cal-day-header {
+      text-align: center;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--muted-2);
+      padding: 4px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .cal-day {
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: var(--radius-xs);
+      font-size: 0.82rem;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.15s var(--ease);
+      font-weight: 500;
+      position: relative;
+      color: var(--text-2);
+    }
+    .cal-day.empty { cursor: default; }
+    .cal-day.disabled { color: var(--muted-2); opacity: 0.35; cursor: not-allowed; }
+    .cal-day.available {
+      color: var(--text);
+      background: var(--accent-glow);
+      border-color: rgba(74,158,255,0.12);
+    }
+    .cal-day.available:hover {
+      background: rgba(74,158,255,0.15);
+      border-color: var(--accent);
+      color: var(--accent);
+      transform: scale(1.08);
+    }
+    .cal-day.selected {
+      background: var(--grad-brand-2) !important;
+      border-color: var(--accent) !important;
+      color: #fff !important;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(74,158,255,0.35);
+      transform: scale(1.08);
+    }
+    .cal-day.today::after {
+      content: '';
+      position: absolute;
+      bottom: 3px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      background: var(--green);
+    }
+    .cal-legend { display: flex; gap: 1rem; margin-top: 0.75rem; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 5px; font-size: 0.72rem; color: var(--muted); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+    .selected-date-display {
+      margin-top: 0.75rem;
+      padding: 10px 14px;
+      background: var(--accent-glow);
+      border: 1px solid rgba(74,158,255,0.15);
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      color: var(--accent);
+      font-weight: 600;
+      display: none;
+    }
+    .selected-date-display.visible { display: flex; align-items: center; gap: 8px; }
+    .selected-date-display svg { width: 16px; height: 16px; flex-shrink: 0; }
+  </style>
+</head>
+<body>
+
+<nav class="navbar">
+  <a href="{{ url_for('dashboard') }}" class="navbar-brand">
+    <div class="logo-icon">MB</div>
+    <span>MediBook</span>
+  </a>
+  <ul class="navbar-nav">
+    <li><a href="{{ url_for('dashboard') }}" class="nav-link" id="nav-dashboard">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>
+      <span>Dashboard</span></a></li>
+    <li><a href="{{ url_for('doctors') }}" class="nav-link active" id="nav-doctors">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/></svg>
+      <span>Doctors</span></a></li>
+    <li><a href="{{ url_for('my_appointments') }}" class="nav-link" id="nav-appts">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+      <span>My Appointments</span></a></li>
+    <li><span class="nav-badge">{{ session.name }}</span></li>
+    <li><a href="{{ url_for('logout') }}" class="nav-link" id="nav-logout">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"/></svg>
+      <span>Logout</span></a></li>
+  </ul>
+</nav>
+
+<div class="container page-wrapper">
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">
+        {% if category == 'success' %}
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+        {% elif category == 'danger' %}
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+        {% elif category == 'warning' %}
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+        {% else %}
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+        {% endif %}
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endwith %}
+
+  <div class="page-header">
+    <h1>Book Appointment</h1>
+    <p>Pick an available date on the calendar, then choose your time slot.</p>
+  </div>
+
+  <div class="booking-wrapper">
+
+    <div class="doctor-profile-card">
+      <div class="profile-avatar">{{ doctor.name[3] | upper }}</div>
+      <div class="profile-name">{{ doctor.name }}</div>
+      <div class="profile-spec">{{ doctor.specialization }}</div>
+
+      <div class="divider"></div>
+
+      <div class="doctor-meta" style="text-align:left;">
+        <div class="meta-item">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+          <div>
+            <div class="text-muted small" style="margin-bottom:4px;">Available Days</div>
+            <div class="tags">
+              {% for day in doctor.available_days.split(',') %}
+              <span class="tag">{{ day.strip() }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        <div class="meta-item" style="margin-top:0.5rem;">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>
+          <div>
+            <div class="text-muted small" style="margin-bottom:4px;">Available Times</div>
+            <div class="tags">
+              {% for time in doctor.available_time.split(',') %}
+              <span class="tag time">{{ time.strip() }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <a href="{{ url_for('doctors') }}" class="btn btn-ghost btn-full" id="btn-back-doctors">
+        <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px"><path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"/></svg>
+        Back to Doctors
+      </a>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+          Select Date &amp; Time
+        </span>
+      </div>
+
+      <form method="POST" action="{{ url_for('book_appointment', doctor_id=doctor.id) }}" id="booking-form">
+        <input type="hidden" id="appointment_date_input" name="appointment_date">
+        <input type="hidden" id="appointment_time" name="appointment_time">
+
+        <div class="form-group">
+          <label class="form-label">Appointment Date</label>
+          <div class="calendar-wrapper">
+            <div class="cal-nav">
+              <button type="button" id="cal-prev" title="Previous month">
+                <svg viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px"><path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              </button>
+              <span class="cal-month-label" id="cal-month-label"></span>
+              <button type="button" id="cal-next" title="Next month">
+                <svg viewBox="0 0 20 20" fill="currentColor" style="width:14px;height:14px"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+              </button>
+            </div>
+
+            <div class="cal-grid" id="cal-grid">
+              <div class="cal-day-header">Sun</div>
+              <div class="cal-day-header">Mon</div>
+              <div class="cal-day-header">Tue</div>
+              <div class="cal-day-header">Wed</div>
+              <div class="cal-day-header">Thu</div>
+              <div class="cal-day-header">Fri</div>
+              <div class="cal-day-header">Sat</div>
+            </div>
+
+            <div class="cal-legend">
+              <div class="legend-item">
+                <div class="legend-dot" style="background:rgba(74,158,255,0.25);border:1px solid rgba(74,158,255,0.4);"></div>
+                Available
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--surface-3);"></div>
+                Unavailable
+              </div>
+              <div class="legend-item">
+                <div class="legend-dot" style="background:var(--grad-brand-2);"></div>
+                Selected
+              </div>
+            </div>
+
+            <div class="selected-date-display" id="selected-date-display">
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+              <span>Selected: </span><span id="selected-date-text"></span>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="form-group" id="time-slot-section" style="display:none;">
+          <label class="form-label">Available Time Slots</label>
+          <p class="text-muted small mb-1">Click a slot to select your appointment time.</p>
+          <div class="time-slots" id="time-slots-container" data-doctor-id="{{ doctor.id }}"
+               data-days="{{ doctor.available_days }}" data-times="{{ doctor.available_time }}">
+          </div>
+        </div>
+
+        <div class="mt-2 d-flex gap-1" style="flex-wrap:wrap;">
+          <button type="submit" class="btn btn-primary" id="confirm-booking-btn">
+            <svg viewBox="0 0 20 20" fill="currentColor" style="width:16px;height:16px"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            Confirm Booking
+          </button>
+          <a href="{{ url_for('doctors') }}" class="btn btn-ghost" id="cancel-booking-btn">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script>
+(function () {
+  const AVAILABLE_DAYS = "{{ doctor.available_days }}".split(',').map(d => d.trim());
+  const DOCTOR_ID = "{{ doctor.id }}";
+  const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+
+  const todayObj = new Date();
+  todayObj.setHours(0, 0, 0, 0);
+
+  let currentYear = todayObj.getFullYear();
+  let currentMonth = todayObj.getMonth();
+  let selectedDateStr = '';
+
+  const grid = document.getElementById('cal-grid');
+  const monthLabel = document.getElementById('cal-month-label');
+  const dateInput = document.getElementById('appointment_date_input');
+  const timeInput = document.getElementById('appointment_time');
+  const displayBox = document.getElementById('selected-date-display');
+  const displayText = document.getElementById('selected-date-text');
+  const timeSection = document.getElementById('time-slot-section');
+  const slotCont = document.getElementById('time-slots-container');
+
+  function renderCalendar(year, month) {
+    monthLabel.textContent = MONTH_NAMES[month] + ' ' + year;
+    const cells = grid.querySelectorAll('.cal-day');
+    cells.forEach(c => c.remove());
+
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    for (let i = 0; i < firstDay; i++) {
+      const blank = document.createElement('div');
+      blank.className = 'cal-day empty';
+      grid.appendChild(blank);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cellDate = new Date(year, month, d);
+      cellDate.setHours(0, 0, 0, 0);
+      const dayName = DAY_NAMES[cellDate.getDay()];
+      const isPast = cellDate < todayObj;
+      const isAvail = AVAILABLE_DAYS.includes(dayName) && !isPast;
+      const isToday = cellDate.getTime() === todayObj.getTime();
+      const dateStr = toDateStr(year, month, d);
+      const isSel = dateStr === selectedDateStr;
+
+      const cell = document.createElement('div');
+      cell.className = 'cal-day';
+      cell.textContent = d;
+
+      if (isSel) cell.classList.add('selected');
+      else if (isAvail) cell.classList.add('available');
+      else cell.classList.add('disabled');
+
+      if (isToday) cell.classList.add('today');
+      if (isAvail) cell.addEventListener('click', () => selectDate(dateStr, cellDate));
+      grid.appendChild(cell);
+    }
+  }
+
+  function toDateStr(y, m, d) {
+    return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+  }
+
+  async function selectDate(dateStr, dateObj) {
+    selectedDateStr = dateStr;
+    dateInput.value = dateStr;
+    timeInput.value = '';
+
+    const formatted = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    displayText.textContent = formatted;
+    displayBox.classList.add('visible');
+
+    renderCalendar(currentYear, currentMonth);
+
+    timeSection.style.display = 'block';
+    slotCont.innerHTML = '<p class="text-muted small" style="grid-column:1/-1;">Loading slots...</p>';
+
+    let booked = [];
+    try {
+      const res = await fetch('/api/booked_slots/' + DOCTOR_ID + '/' + dateStr);
+      booked = await res.json();
+    } catch (_) { }
+
+    const allTimes = (slotCont.dataset.times || '').split(',').map(t => t.trim()).filter(Boolean);
+    slotCont.innerHTML = '';
+
+    allTimes.forEach(time => {
+      const isBooked = booked.includes(time);
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'time-slot' + (isBooked ? ' booked' : '');
+      btn.textContent = time;
+      btn.title = isBooked ? 'Already booked' : time;
+      btn.disabled = isBooked;
+
+      btn.addEventListener('click', () => {
+        if (isBooked) return;
+        slotCont.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+        btn.classList.add('selected');
+        timeInput.value = time;
+      });
+      slotCont.appendChild(btn);
+    });
+  }
+
+  document.getElementById('cal-prev').addEventListener('click', () => {
+    currentMonth--;
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    renderCalendar(currentYear, currentMonth);
+  });
+
+  document.getElementById('cal-next').addEventListener('click', () => {
+    currentMonth++;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    renderCalendar(currentYear, currentMonth);
+  });
+
+  renderCalendar(currentYear, currentMonth);
+})();
+</script>
+</body>
+</html>
