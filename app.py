@@ -59,13 +59,13 @@ def init_db():
             conn.execute(
                 "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)",
                 ('Admin', 'admin@clinic.com', generate_password_hash('admin123'), 'admin')
-            ) 
+            )
 
         # seed sample doctors if none exist
         count = conn.execute("SELECT COUNT(*) FROM doctors").fetchone()[0]
         if count == 0:
             sample_doctors = [
-          
+               
             ]
             conn.executemany(
                 "INSERT INTO doctors (name, specialization, available_days, available_time) VALUES (?, ?, ?, ?)",
