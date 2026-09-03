@@ -319,8 +319,28 @@ def my_appointments():
     return render_template('appointments.html', appointments=appointments)
 
 
-# DELETE THIS ENTIRE BLOCK ↓
-# cancel_appointment function removed for change management testing #1
+@app.route('/cancel/<int:appt_id>', methods=['POST'])
+@patient_required
+def cancel_appointment(appt_id):
+    with get_db() as conn:
+        # make sure the appointment belongs to the logged-in patient
+        appt = conn.execute(
+            "SELECT id FROM appointments WHERE id = ? AND patient_id = ?",
+            (appt_id, session['user_id'])
+        ).fetchone()
+
+        if not appt:
+            flash('Appointment not found or access denied.', 'danger')
+            return redirect(url_for('my_appointments'))
+
+        conn.execute(
+            "UPDATE appointments SET status = 'cancelled' WHERE id = ?",
+            (appt_id,)
+        )
+        conn.commit()
+
+    flash('Appointment cancelled successfully.', 'success')
+    return redirect(url_for('my_appointments'))
 
 
 # ─────────────────────────────────────────────
