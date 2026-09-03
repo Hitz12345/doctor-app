@@ -65,7 +65,7 @@ def init_db():
         count = conn.execute("SELECT COUNT(*) FROM doctors").fetchone()[0]
         if count == 0:
             sample_doctors = [
-                ('Dr. Mya Mya',      'General Physician',  'Monday,Wednesday,Friday',    '09:00,10:00,11:00,14:00,15:00'),
+               ('Dr. Mya Mya',      'General Physician',  'Monday,Wednesday,Friday',    '09:00,10:00,11:00,14:00,15:00'),
                 ('Dr. Aung Kyaw',    'Dentist',            'Tuesday,Thursday,Saturday',  '09:00,10:00,11:00,14:00,15:00'),
                 ('Dr. Khin Khin',    'Pediatrician',       'Monday,Tuesday,Wednesday',   '10:00,11:00,14:00,15:00,16:00'),
                 ('Dr. Zaw Lin',      'Orthopedist',        'Wednesday,Thursday,Friday',  '09:00,10:00,14:00,15:00,16:00'),
@@ -319,31 +319,8 @@ def my_appointments():
     return render_template('appointments.html', appointments=appointments)
 
 
-@app.route('/cancel/<int:appt_id>', methods=['POST'])
-@patient_required
-def cancel_appointment(appt_id):
-    with get_db() as conn:
-        appt = conn.execute(
-            "SELECT * FROM appointments WHERE id = ? AND patient_id = ?",
-            (appt_id, session['user_id'])
-        ).fetchone()
-
-        if not appt:
-            flash('Appointment not found.', 'danger')
-            return redirect(url_for('my_appointments'))
-
-        if appt['status'] == 'cancelled':
-            flash('Appointment is already cancelled.', 'warning')
-            return redirect(url_for('my_appointments'))
-
-        conn.execute(
-            "UPDATE appointments SET status = 'cancelled' WHERE id = ?",
-            (appt_id,)
-        )
-        conn.commit()
-
-    flash('Appointment cancelled successfully.', 'success')
-    return redirect(url_for('my_appointments'))
+# DELETE THIS ENTIRE BLOCK ↓
+# cancel_appointment function removed for change management testing #1
 
 
 # ─────────────────────────────────────────────
